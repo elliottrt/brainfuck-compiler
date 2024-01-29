@@ -1,0 +1,6 @@
+# Python Stuff
+__pycache__
+
+# Compilation Output
+*.asm
+*.o

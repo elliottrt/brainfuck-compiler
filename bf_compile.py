@@ -122,15 +122,13 @@ def compile_bf(options) -> None:
 
 	gen_jump_pairs(commands)
 
-	asmname = f'{options["out"]}.asm'
+	asmname = options['out'] if options['asm_only'] else f'{options["out"]}.asm'
 	oname = f'{options["out"]}.o'
 
 	bf_asm = {
 		'i386': bf_i386,
 		'x86_64': bf_x86_64,
-		'x86_64h': bf_x86_64,
-		'arm64': bf_arm64,
-		'arm64e': bf_arm64
+		'arm64': bf_arm64
 	}.get(options['asm_target'], None)
 
 	with open(asmname, 'w') as asmfile:
@@ -139,12 +137,10 @@ def compile_bf(options) -> None:
 			write_command(asmfile, bf_asm.command, cmd, index, options)
 		write_footer(asmfile, bf_asm.footer, options)
 
-	# os.system(f'nasm {asmname} -f{options["output_format"]} -o {oname}')
-	# os.system(f'ld {oname} -o {options["out"]} -static')
-
-	os.system(f'as {asmname} -o {oname} -arch {options["asm_target"]} {options["as_args"]}')
-	os.system(f'ld {oname} -o {options["out"]} -arch {options["asm_target"]} {options["ld_args"]}')
-		
-	os.system(f'rm -f {oname}')
-	os.system(f'rm -f {asmname}')
+	if not options['asm_only']:
+		os.system(f'as {asmname} -o {oname} -arch {options["asm_target"]} {options["as_args"]}')
+		os.system(f'ld {oname} -o {options["out"]} -arch {options["asm_target"]} {options["ld_args"]}')
+			
+		os.system(f'rm -f {oname}')
+		os.system(f'rm -f {asmname}')
 

@@ -8,20 +8,23 @@ TODO: only change rdi/x1 when we switch from reading to writing
 TODO: bfp/e.bf fails in arm64
 TODO: ,.,.,. only reads and writes twice -> why?
 TODO: output format should be an option (currently macho64)
-TODO: figure out if i386, x86_64h, arm64e are actually working
+TODO: figure out if i386 works
 TODO: refactor bf_X to return str instead of List[str] -> '...'\n'...' is a single string
+TODO: make options['asm_comments'] a command line option
+TODO: calls to c std library instead of syscalls (option?)
 '''
 
 def usage(filename: str) -> None:
 	print()
-	print(f'Usage: {filename} [options]')
+	print(f'Usage: {filename} <input file> [options]')
 	print('\nOptions:')
 	print('-o <filepath> (output filepath)')
 	print('-no (don\'t optimize output)')
 	print('-nrwf (disable subroutines for read and write)')
 	print('-cc (set number of cells)')
 	print('-cs (cell size in bits - 8, 16, 32, 64)')
-	print('-a (architecture - i386, x86_64, x86_64h, arm64, arm64e)')
+	print('-arch (architecture - i386, x86_64, arm64)')
+	print('-asm (only output assembly file, will use -o <filename> if specified)')
 	print()
 	exit(0)
 
@@ -52,17 +55,18 @@ if __name__ == '__main__':
 		'rwfunc': not get_arg_exists('-nrwf'),
 		'cell_count': int(get_arg_or_default('-cc', '10000')),
 		'cell_size': int(get_arg_or_default('-cs', '8')),
-		'asm_target': get_arg_or_default('-a', 'x86_64'),
+		'asm_target': get_arg_or_default('-arch', 'x86_64'),
 		'size_name': '',
 		'size_prefix': '',
 		'cell_size_bytes': 1,
 		'output_format': 'macho64',
 		'asm_comments': False,
 		'as_args': '',
-		'ld_args': ''
+		'ld_args': '',
+		'asm_only': get_arg_exists('-asm')
 	}
 
-	if options['asm_target'] not in ['i386', 'x86_64', 'x86_64h', 'arm64', 'arm64e']:
+	if options['asm_target'] not in ['i386', 'x86_64', 'arm64']:
 		print(f'Error: invalid arch {options["asm_target"]}')
 		exit(1)
 
@@ -92,9 +96,9 @@ if __name__ == '__main__':
 	options['size_prefix'] = options['size_name'][0]
 
 	# annoying at&t syntax thingy
-	if options['asm_target'] in ['i386', 'x86_64h', 'x86_64'] and options['cell_size'] == 32:
+	if options['asm_target'] in ['i386', 'x86_64'] and options['cell_size'] == 32:
 		options['size_prefix'] = 'l'
-	elif options['asm_target'] in ['arm64', 'arm64e']:
+	elif options['asm_target'] in ['arm64']:
 		options['size_prefix'] = {
 			8: 'b',
 			16: 'h',
