@@ -5,7 +5,6 @@ import sys
 
 '''
 TODO: only change rdi/x1 when we switch from reading to writing
-TODO: bfp/e.bf fails in arm64
 TODO: ,.,.,. only reads and writes twice -> why?
 TODO: output format should be an option (currently macho64)
 TODO: figure out if i386 works
@@ -60,7 +59,7 @@ if __name__ == '__main__':
 		'size_prefix': '',
 		'cell_size_bytes': 1,
 		'output_format': 'macho64',
-		'asm_comments': False,
+		'asm_comments': True,
 		'as_args': '',
 		'ld_args': '',
 		'asm_only': get_arg_exists('-asm')

@@ -4,3 +4,4 @@ __pycache__
 # Compilation Output
 *.asm
 *.o
+out

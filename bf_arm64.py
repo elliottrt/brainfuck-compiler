@@ -23,12 +23,12 @@ def write_code() -> List[str]:
 def header(options) -> List[str]:
     return [
         '.global _main\n',
-        '.align 4\n\n',
+        '.align 8\n\n',
         '_main:\n',
 	    '\t// initialize the cell pointer\n',
 	    '\tadrp x3, cells@PAGE\n',
         '\tadd x3, x3, cells@PAGEOFF\n',
-        '\tmov x2, #1\n'
+        '\tmov x2, #1\n',
 	    '\n// Program Code:\n'
     ]
 
@@ -46,8 +46,9 @@ def footer(options) -> List[str]:
     result.extend([
         '\n// cell memory reservation\n',
         '.data\n',
-        '.align 4\n',
-	    f'.comm cells, {options["cell_count"] * options["cell_size"] // 8}\n'
+        '.align 8\n',
+        'cells:\n',
+	    f'\t.zero {options["cell_count"] * options["cell_size"] // 8}\n'
     ])
     return result
 
