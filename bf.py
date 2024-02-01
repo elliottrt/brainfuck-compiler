@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from bf_compile import compile_bf
+from bf_types import *
 import sys
 
 '''
@@ -11,6 +12,7 @@ TODO: figure out if i386 works
 TODO: refactor bf_X to return str instead of List[str] -> '...'\n'...' is a single string
 TODO: make options['asm_comments'] a command line option
 TODO: calls to c std library instead of syscalls (option?)
+TODO: use variables to simplify types and make them more obvious
 '''
 
 def usage(filename: str) -> None:
@@ -25,10 +27,10 @@ def usage(filename: str) -> None:
 	print('-arch (architecture - i386, x86_64, arm64)')
 	print('-asm (only output assembly file, will use -o <filename> if specified)')
 	print()
-	exit(0)
+	exit(1)
 
 def get_arg_or_default(ident: str, default: str) -> str:
-	i = 0
+	i: int = 0
 	while i < len(sys.argv):
 		if sys.argv[i].startswith((ident, ident.upper())):
 			if len(sys.argv[i]) - len(ident) == 0:
@@ -47,7 +49,7 @@ def get_arg_exists(ident: str) -> bool:
 if __name__ == '__main__':
 	if len(sys.argv) < 2: usage(__file__)
 
-	options = {
+	options: Options = {
 		'input_file': sys.argv[1],
 		'out': get_arg_or_default('-o', 'out'),
 		'optimize': not get_arg_exists('-no'),
@@ -58,7 +60,6 @@ if __name__ == '__main__':
 		'size_name': '',
 		'size_prefix': '',
 		'cell_size_bytes': 1,
-		'output_format': 'macho64',
 		'asm_comments': True,
 		'as_args': '',
 		'ld_args': '',
@@ -69,6 +70,7 @@ if __name__ == '__main__':
 		print(f'Error: invalid arch {options["asm_target"]}')
 		exit(1)
 
+	# intentionally empty
 	options['as_args'] = {
 		
 	}.get(options['asm_target'], '')

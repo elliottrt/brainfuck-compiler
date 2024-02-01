@@ -1,6 +1,6 @@
-from typing import List
+from bf_types import *
 
-def read_code() -> List[str]:
+def read_code(options: Options) -> CodeSegment:
     return [
         '\t//read syscall\n',
         '\tmov $0x02000003, %rax\n',
@@ -9,16 +9,16 @@ def read_code() -> List[str]:
         '\tsyscall\n'
     ]
 
-def write_code() -> List[str]:
+def write_code(options: Options) -> CodeSegment:
     return [
         '\t// write syscall\n',
         '\tmov $0x02000004, %rax\n',
         '\tmov $1, %rdi\n',
         '\tmov $1, %rdx\n',
-        '\tsyscall\n'
+        '\tsyscall\n',
     ]
 
-def header(options) -> List[str]:
+def header(options: Options) -> CodeSegment:
     return [
         '.text\n\n',
 	    '.globl _main\n\n',
@@ -28,7 +28,7 @@ def header(options) -> List[str]:
 	    '\n// Program Code:\n'
     ]
 
-def footer(options) -> List[str]:
+def footer(options: Options) -> CodeSegment:
     result = [
         '\n// End Program Code\n',
 	    '\n\t// exit syscall\n',
@@ -37,15 +37,15 @@ def footer(options) -> List[str]:
 	    '\tsyscall\n'
     ]
     if options['rwfunc']:
-        if options['read_used']: result.extend(read_func())
-        if options['write_used']: result.extend(write_func())
+        if options['read_used']: result.extend(read_func(options))
+        if options['write_used']: result.extend(write_func(options))
     result.extend([
         '// cell memory reservation\n',
 	    f'.comm cells, {options["cell_count"] * options["cell_size_bytes"]}\n'
     ])
     return result
 
-def command(code: str, args: List[str], options) -> List[str]:
+def command(code: str, args: CodeArguments, options: Options) -> CodeSegment:
     if code == '+':
         if args[0] == '1':
             return [
@@ -82,12 +82,12 @@ def command(code: str, args: List[str], options) -> List[str]:
         return [
             '\t// write function call\n',
             '\tcall write\n'
-        ] if options['rwfunc'] else write_code()
+        ] if options['rwfunc'] else write_code(options)
     if code == ',':
         return [
             '\t// read function call\n',
             '\tcall read\n'
-        ] if options['rwfunc'] else read_code()
+        ] if options['rwfunc'] else read_code(options)
     if code == '[':
         return [
             '\t// start of loop\n',
@@ -109,26 +109,26 @@ def command(code: str, args: List[str], options) -> List[str]:
         ]
     assert False, 'unreachable - bf_x86_64::command'
 
-def read_func() -> List[str]:
+def read_func(options: Options) -> CodeSegment:
     result = []
     result.extend([
         '\nread:\n',
     ])
     result.extend(
-        read_code()
+        read_code(options)
     )
     result.extend([
         '\tret\n'
     ])
     return result
 
-def write_func() -> List[str]:
+def write_func(options: Options) -> CodeSegment:
     result = []
     result.extend([
         '\nwrite:\n',
     ])
     result.extend(
-        write_code()
+        write_code(options)
     )
     result.extend([
         '\tret\n\n'

@@ -1,66 +1,65 @@
 import os
-from typing import TextIO, Callable, List, Dict
 
+from bf_types import *
 import bf_i386
 import bf_x86_64
 import bf_arm64
 
-global jump_pairs
-jump_pairs = []
-
-def get_jump_pair(i: int) -> int:
+def get_jump_pair(i: int, jump_pairs: List[JumpPair]) -> int:
 	for pair in jump_pairs:
 		if   pair[0] == i: return pair[1]
 		elif pair[1] == i: return pair[0]
 	assert False, "jump pair not found."
 
-def locate_pair(i: int, commands) -> int:
-	depth = 0
+# TODO: stack instead of depth?
+def locate_pair(i: int, commands: Program) -> int:
+	depth: int = 0
 	for cmdi in range(i, len(commands)):
 		if commands[cmdi] == '[': depth += 1
 		if commands[cmdi] == ']': depth -= 1
 		if depth == 0: return cmdi
 	assert False, "number of [ and ] do not match"
 
-def gen_jump_pairs(commands) -> None:
-	for (i, cmd) in enumerate(commands):
-		if cmd == '[':
-			jump_pairs.append((i, locate_pair(i, commands)))
+def gen_jump_pairs(commands: Program) -> List[JumpPair]:
+	pairs: List[JumpPair] = []
+	for i, cmd in enumerate(commands):
+		if cmd == '[': pairs.append((i, locate_pair(i, commands)))
+	return pairs
 
 def valid_bf_char(c: str) -> bool:
 	return c in ['+', '-', '<', '>', '.', ',', '[', ']']
 
-def write_header(f: TextIO, header: Callable[[Dict], List[str]], options) -> None:
+def write_header(f: TextIO, header: CodeHeader, options: Options) -> None:
 	for line in header(options):
 		if options['asm_comments'] or '//' not in line:
 			f.write(line)
 
-def write_footer(f: TextIO, footer: Callable[[Dict], List[str]], options) -> None:
+def write_footer(f: TextIO, footer: CodeFooter, options: Options) -> None:
 	for line in footer(options):
 		if options['asm_comments'] or '//' not in line:
 			f.write(line)
 
-def write_command(f: TextIO, command: Callable[[str, List[str]], List[str]], instr: str, i: int, options) -> None:
+def write_command(f: TextIO, command: CodeCommand, instr: str, i: int, jump_pairs: List[JumpPair], options: Options) -> None:
 	instruction: str = instr[0]
 	amount: str = instr[1:]
 
-	args = []
+	args: CodeArguments = []
 
 	if instruction in ['+', '-', '<', '>'] and len(amount) != 0:
 		args.append(amount)
 	elif instruction in ['[', ']']:
-		args.append(get_jump_pair(i))
-		args.append(i)
+		args.append(str(get_jump_pair(i, jump_pairs)))
+		args.append(str(i))
 
 	for line in command(instruction, args, options):
 		if options['asm_comments'] or '//' not in line:
 			f.write(line)
 
-def run_optimizations(contents, optimize: bool):
+def run_optimizations(contents: str, optimize: bool) -> Program:
 	# ensure valid chars
 	contents = "".join([c for c in contents if valid_bf_char(c)])
 
-	commands = []
+	commands: Program = []
 
 	if optimize:
 		i = 0
@@ -110,31 +109,31 @@ def run_optimizations(contents, optimize: bool):
 
 	return commands
 
-def compile_bf(options) -> None:
+def compile_bf(options: Options) -> None:
 
-	contents = ''
+	contents: str = ''
 	with open(options['input_file'], 'r') as file: contents = file.read()
 
-	commands = run_optimizations(contents, options['optimize'])
+	commands: Program = run_optimizations(contents, options['optimize'])
 
 	options['write_used'] = commands.count('.') > 0
 	options['read_used'] = commands.count(',') > 0
 
-	gen_jump_pairs(commands)
+	jump_pairs: List[JumpPair] = gen_jump_pairs(commands)
 
-	asmname = options['out'] if options['asm_only'] else f'{options["out"]}.asm'
-	oname = f'{options["out"]}.o'
+	asmname: str = options['out'] if options['asm_only'] else f'{options["out"]}.asm'
+	oname: str = f'{options["out"]}.o'
 
-	bf_asm = {
+	bf_asm: ModuleType = {
 		'i386': bf_i386,
 		'x86_64': bf_x86_64,
 		'arm64': bf_arm64
-	}.get(options['asm_target'], None)
+	}.get(options['asm_target'], bf_x86_64)
 
 	with open(asmname, 'w') as asmfile:
 		write_header(asmfile, bf_asm.header, options)
 		for (index, cmd) in enumerate(commands): 
-			write_command(asmfile, bf_asm.command, cmd, index, options)
+			write_command(asmfile, bf_asm.command, cmd, index, jump_pairs, options)
 		write_footer(asmfile, bf_asm.footer, options)
 
 	if not options['asm_only']:

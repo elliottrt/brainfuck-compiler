@@ -1,5 +1,6 @@
 # Python Stuff
 __pycache__
+.mypy_cache
 
 # Compilation Output
 *.asm
