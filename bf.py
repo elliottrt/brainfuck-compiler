@@ -1,23 +1,26 @@
 #!/usr/bin/python3
 
 from bf_compile import compile_bf
-from bf_types import *
+from bf_types import Options
 import sys
+import os
 
 '''
 TODO: only change rdi/x1 when we switch from reading to writing
-TODO: ,.,.,. only reads and writes twice -> why?
-TODO: output format should be an option (currently macho64)
+TODO (BUG): ,.,. only reads and writes once -> why?
 TODO: figure out if i386 works
+TODO: x86 compilation target
+TODO (BUG): whey does e.bf cause a bus error?
 TODO: refactor bf_X to return str instead of List[str] -> '...'\n'...' is a single string
 TODO: make options['asm_comments'] a command line option
 TODO: calls to c std library instead of syscalls (option?)
-TODO: use variables to simplify types and make them more obvious
+TODO: add simulation mode
 '''
+
 
 def usage(filename: str) -> None:
 	print()
-	print(f'Usage: {filename} <input file> [options]')
+	print(f'Usage: {os.path.basename(filename)} <input file> [options]')
 	print('\nOptions:')
 	print('-o <filepath> (output filepath)')
 	print('-no (don\'t optimize output)')
@@ -27,7 +30,7 @@ def usage(filename: str) -> None:
 	print('-arch (architecture - i386, x86_64, arm64)')
 	print('-asm (only output assembly file, will use -o <filename> if specified)')
 	print()
-	exit(1)
+
 
 def get_arg_or_default(ident: str, default: str) -> str:
 	i: int = 0
@@ -37,18 +40,23 @@ def get_arg_or_default(ident: str, default: str) -> str:
 				if i + 1 < len(sys.argv):
 					return sys.argv[i + 1]
 				else:
-					print(f'Error: expected argument following {ident}, got none')
+					print(f'rror: expected argument following {ident}, got none')
 			else:
 				return sys.argv[i][len(ident):]
 		i += 1
 	return default
 
+
 def get_arg_exists(ident: str) -> bool:
 	return ident in sys.argv or ident.upper() in sys.argv
 
-if __name__ == '__main__':
-	if len(sys.argv) < 2: usage(__file__)
 
+if __name__ == '__main__':
+	if len(sys.argv) < 2:
+		usage(__file__)
+		exit(1)
+
+	# TODO: use argparse instead
 	options: Options = {
 		'input_file': sys.argv[1],
 		'out': get_arg_or_default('-o', 'out'),
@@ -67,12 +75,12 @@ if __name__ == '__main__':
 	}
 
 	if options['asm_target'] not in ['i386', 'x86_64', 'arm64']:
-		print(f'Error: invalid arch {options["asm_target"]}')
+		print(f'rror: invalid arch {options["asm_target"]}')
 		exit(1)
 
 	# intentionally empty
 	options['as_args'] = {
-		
+
 	}.get(options['asm_target'], '')
 
 	options['ld_args'] = {
@@ -80,11 +88,11 @@ if __name__ == '__main__':
 	}.get(options['asm_target'], '')
 
 	if options['cell_size'] not in [8, 16, 32, 64]:
-		print(f'Error: invalid cell size {options["cell_size"]}')
+		print(f'error: invalid cell size {options["cell_size"]}')
 		exit(1)
 
 	if options['asm_target'] == 'i386' and options['cell_size'] == 64:
-		print(f'Error: 64 bit cells not valid for i386')
+		print('error: 64 bit cells not valid for i386')
 		exit(1)
 
 	options['size_name'] = {

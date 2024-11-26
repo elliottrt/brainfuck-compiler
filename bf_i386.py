@@ -1,4 +1,6 @@
-from bf_types import *
+
+from bf_types import Options, CodeSegment, CodeArguments
+
 
 def read_code(options: Options) -> CodeSegment:
     return [
@@ -9,6 +11,7 @@ def read_code(options: Options) -> CodeSegment:
         '\tsyscall\n'
     ]
 
+
 def write_code(options: Options) -> CodeSegment:
     return [
         '\t// write syscall\n',
@@ -18,38 +21,43 @@ def write_code(options: Options) -> CodeSegment:
         '\tsyscall\n'
     ]
 
+
 def header(options: Options) -> CodeSegment:
     return [
         '.text\n\n',
-	    '.globl start\n\n',
-	    'start:\n',
-	    '\t// initialize the cell pointer\n',
-	    '\tlea cells, %esi\n',
-	    '\n// Program Code:\n'
+        '.globl start\n\n',
+        'start:\n',
+        '\t// initialize the cell pointer\n',
+        '\tlea cells, %esi\n',
+        '\n// Program Code:\n'
     ]
+
 
 def footer(options: Options) -> CodeSegment:
     result = [
         '\n// End Program Code\n',
-	    '\n\t// exit syscall\n',
-	    '\tmov $0x02000001, %eax\n',
-	    '\txor %edi, %edi\n',
-	    '\tsyscall\n'
+        '\n\t// exit syscall\n',
+        '\tmov $0x02000001, %eax\n',
+        '\txor %edi, %edi\n',
+        '\tsyscall\n'
     ]
     if options['rwfunc']:
-        if options['read_used']: result.extend(read_func(options))
-        if options['write_used']: result.extend(write_func(options))
+        if options['read_used']:
+            result.extend(read_func(options))
+        if options['write_used']:
+            result.extend(write_func(options))
     result.extend([
         '// cell memory reservation\n',
-	    f'.comm cells, {options["cell_count"] * options["cell_size_bytes"]}\n'
+        f'.comm cells, {options["cell_count"] * options["cell_size_bytes"]}\n'
     ])
     return result
+
 
 def command(code: str, args: CodeArguments, options: Options) -> CodeSegment:
     if code == '+':
         if args[0] == '1':
             return [
-                f'\t// add 1\n',
+                '\t// add 1\n',
                 f'\tinc{options["size_prefix"]} (%esi)\n'
             ]
         else:
@@ -91,16 +99,16 @@ def command(code: str, args: CodeArguments, options: Options) -> CodeSegment:
     if code == '[':
         return [
             '\t// start of loop\n',
-		    f'\tcmp{options["size_prefix"]} $0, (%esi)\n',
-		    f'\tje jump_{args[0]}\n',
-		    f'jump_{args[1]}:\n'
+            f'\tcmp{options["size_prefix"]} $0, (%esi)\n',
+            f'\tje jump_{args[0]}\n',
+            f'jump_{args[1]}:\n'
         ]
     if code == ']':
         return [
             '\t// end of loop\n',
             f'\tcmp{options["size_prefix"]} $0, (%esi)\n',
-		    f'\tjne jump_{args[0]}\n',
-		    f'jump_{args[1]}:\n'
+            f'\tjne jump_{args[0]}\n',
+            f'jump_{args[1]}:\n'
         ]
     if code == '0':
         return [
@@ -108,6 +116,7 @@ def command(code: str, args: CodeArguments, options: Options) -> CodeSegment:
             f'\tmov{options["size_prefix"]} $0, (%esi)\n'
         ]
     assert False, 'unreachable - bf_i386::command'
+
 
 def read_func(options: Options) -> CodeSegment:
     result = []
@@ -121,6 +130,7 @@ def read_func(options: Options) -> CodeSegment:
         '\tret\n'
     ])
     return result
+
 
 def write_func(options: Options) -> CodeSegment:
     result = []
