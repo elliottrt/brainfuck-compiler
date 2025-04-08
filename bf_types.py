@@ -1,7 +1,9 @@
 
-from typing import Callable, Any
+from typing import Callable
+from argparse import Namespace
 
-Options = dict[str, Any]
+
+Options = Namespace
 JumpPair = tuple[int, int]
 Program = list[str]
 CodeSegment = list[str]

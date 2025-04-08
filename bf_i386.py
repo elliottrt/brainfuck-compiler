@@ -41,14 +41,14 @@ def footer(options: Options) -> CodeSegment:
         '\txor %edi, %edi\n',
         '\tsyscall\n'
     ]
-    if options['rwfunc']:
-        if options['read_used']:
+    if not options.no_func:
+        if options.read_used:
             result.extend(read_func(options))
-        if options['write_used']:
+        if options.write_used:
             result.extend(write_func(options))
     result.extend([
         '// cell memory reservation\n',
-        f'.comm cells, {options["cell_count"] * options["cell_size_bytes"]}\n'
+        f'.comm cells, {options.cells * options.cell_size_bytes}\n'
     ])
     return result
 
@@ -58,62 +58,62 @@ def command(code: str, args: CodeArguments, options: Options) -> CodeSegment:
         if args[0] == '1':
             return [
                 '\t// add 1\n',
-                f'\tinc{options["size_prefix"]} (%esi)\n'
+                f'\tinc{options.size_prefix} (%esi)\n'
             ]
         else:
             return [
                 f'\t// add {args[0]}\n',
-                f'\tadd{options["size_prefix"]} ${args[0]}, (%esi)\n'
+                f'\tadd{options.size_prefix} ${args[0]}, (%esi)\n'
             ]
     if code == '-':
         if args[0] == '1':
             return [
                 '\t// subtract 1\n',
-                f'\tdec{options["size_prefix"]} (%esi)\n'
+                f'\tdec{options.size_prefix} (%esi)\n'
             ]
         else:
             return [
                 f'\t// subtract {args[0]}\n',
-                f'\tsub{options["size_prefix"]} ${args[0]}, (%esi)\n'
+                f'\tsub{options.size_prefix} ${args[0]}, (%esi)\n'
             ]
     if code == '<':
         return [
             f'\t// move left {args[0]}\n',
-            f'\tsub ${int(args[0]) * options["cell_size_bytes"]}, %esi\n'
+            f'\tsub ${int(args[0]) * options.cell_size_bytes}, %esi\n'
         ]
     if code == '>':
         return [
             f'\t// move right {args[0]}\n',
-            f'\tadd ${int(args[0]) * options["cell_size_bytes"]}, %esi\n'
+            f'\tadd ${int(args[0]) * options.cell_size_bytes}, %esi\n'
         ]
     if code == '.':
         return [
             '\t// write function call\n',
             '\tcall write\n'
-        ] if options['rwfunc'] else write_code(options)
+        ] if not options.no_func else write_code(options)
     if code == ',':
         return [
             '\t// read function call\n',
             '\tcall read\n'
-        ] if options['rwfunc'] else read_code(options)
+        ] if not options.no_func else read_code(options)
     if code == '[':
         return [
             '\t// start of loop\n',
-            f'\tcmp{options["size_prefix"]} $0, (%esi)\n',
+            f'\tcmp{options.size_prefix} $0, (%esi)\n',
             f'\tje jump_{args[0]}\n',
             f'jump_{args[1]}:\n'
         ]
     if code == ']':
         return [
             '\t// end of loop\n',
-            f'\tcmp{options["size_prefix"]} $0, (%esi)\n',
+            f'\tcmp{options.size_prefix} $0, (%esi)\n',
             f'\tjne jump_{args[0]}\n',
             f'jump_{args[1]}:\n'
         ]
     if code == '0':
         return [
             '\t// optimization - zero cell\n',
-            f'\tmov{options["size_prefix"]} $0, (%esi)\n'
+            f'\tmov{options.size_prefix} $0, (%esi)\n'
         ]
     assert False, 'unreachable - bf_i386::command'
 

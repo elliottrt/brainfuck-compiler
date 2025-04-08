@@ -1,6 +1,5 @@
 import os
 from typing import TextIO
-from types import ModuleType
 
 from bf_types import JumpPair, Program, CodeHeader, \
         CodeFooter, Options, CodeCommand, CodeArguments
@@ -45,13 +44,13 @@ def valid_bf_char(c: str) -> bool:
 
 def write_header(f: TextIO, header: CodeHeader, options: Options) -> None:
     for line in header(options):
-        if options['asm_comments'] or '//' not in line:
+        if options.asm_comments or '//' not in line:
             f.write(line)
 
 
 def write_footer(f: TextIO, footer: CodeFooter, options: Options) -> None:
     for line in footer(options):
-        if options['asm_comments'] or '//' not in line:
+        if options.asm_comments or '//' not in line:
             f.write(line)
 
 
@@ -69,13 +68,13 @@ def write_command(f: TextIO, command: CodeCommand, instr: str, i: int,
         args.append(str(i))
 
     for line in command(instruction, args, options):
-        if options['asm_comments'] or '//' not in line:
+        if options.asm_comments or '//' not in line:
             f.write(line)
 
 
 def run_optimizations(contents: str, optimize: bool) -> Program:
     # ensure valid chars
-    contents = "".join([c for c in contents if valid_bf_char(c)])
+    contents = ''.join([c for c in contents if valid_bf_char(c)])
 
     commands: Program = []
 
@@ -132,25 +131,25 @@ def run_optimizations(contents: str, optimize: bool) -> Program:
 def compile_bf(options: Options) -> None:
 
     contents: str = ''
-    with open(options['input_file'], 'r') as file:
+    with open(options.input_file, 'r') as file:
         contents = file.read()
 
-    commands: Program = run_optimizations(contents, options['optimize'])
+    commands = run_optimizations(contents, options.optimize)
 
-    options['write_used'] = commands.count('.') > 0
-    options['read_used'] = commands.count(',') > 0
+    options.write_used = commands.count('.') > 0
+    options.read_used = commands.count(',') > 0
 
-    jump_pairs: list[JumpPair] = gen_jump_pairs(commands)
+    jump_pairs = gen_jump_pairs(commands)
 
-    asmname: str = options['out'] if options['asm_only'] \
-        else options['out'] + '.asm'
-    oname: str = f'{options["out"]}.o'
+    asmname: str = options.output if options.asm_only else \
+        options.output + '.asm'
+    oname: str = options.output + '.o'
 
-    bf_asm: ModuleType = {
+    bf_asm = {
         'i386': bf_i386,
         'x86_64': bf_x86_64,
         'arm64': bf_arm64
-    }.get(options['asm_target'], bf_x86_64)
+    }.get(options.arch, bf_x86_64)
 
     with open(asmname, 'w') as asmfile:
         write_header(asmfile, bf_asm.header, options)
@@ -165,18 +164,18 @@ def compile_bf(options: Options) -> None:
             )
         write_footer(asmfile, bf_asm.footer, options)
 
-    if not options['asm_only']:
+    if not options.asm_only:
         os.system(' '.join([
             f'as {asmname}',
             f'-o {oname}',
-            f'-arch {options["asm_target"]}'
-            f'{options["as_args"]}'
+            f'-arch {options.arch}'
+            f'{options.as_args}'
         ]))
         os.system(' '.join([
             f'ld {oname}',
-            f'-o {options["out"]}',
-            f'-arch {options["asm_target"]}',
-            f'{options["ld_args"]}'
+            f'-o {options.output}',
+            f'-arch {options.arch}',
+            f'{options.ld_args}'
         ]))
 
         os.system(f'rm -f {oname}')
