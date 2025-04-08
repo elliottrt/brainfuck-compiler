@@ -6,6 +6,7 @@ __pycache__
 *.asm
 *.o
 out
+a.out
 
 # MacOS Stuff
 .DS_Store
