@@ -5,11 +5,11 @@ import argparse
 import sys
 
 '''
-TODO: instead of \n at the end of all bf_<target>.py assembly, append with code
 TODO: only change rdi/x1 when we switch from reading to writing
 TODO (BUG): ,.,. only reads and writes once -> why?
 TODO: figure out if i386 works
 TODO: x86 compilation target
+TODO: llvm ir compilation target
 TODO (BUG): whey does e.bf cause a bus error?
 TODO: make options['asm_comments'] a command line option
 TODO: calls to c std library instead of syscalls (option?)

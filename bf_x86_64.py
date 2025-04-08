@@ -35,7 +35,7 @@ def header(options: Options) -> CodeSegment:
 
 def footer(options: Options) -> CodeSegment:
     result = [
-        '\n// End Program Code\n',
+        '\n\t// End Program Code\n',
         '\n\t// exit syscall\n',
         '\tmov $0x02000001, %rax\n',
         '\txor %rdi, %rdi\n',
@@ -47,7 +47,7 @@ def footer(options: Options) -> CodeSegment:
         if options.write_used:
             result.extend(write_func(options))
     result.extend([
-        '// cell memory reservation\n',
+        '\n// cell memory reservation\n',
         f'.comm cells, {options.cells * options.cell_size_bytes}\n'
     ])
     return result
